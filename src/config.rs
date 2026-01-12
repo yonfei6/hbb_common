@@ -77,7 +77,7 @@ lazy_static::lazy_static! {
 			match option_env!("My_Password") {
 				Some(key) if !key.is_empty() => key,
 				_ => "",
-			}.to_owned().to_string());
+			}.to_string());
         RwLock::new(map)
     };
     pub static ref BUILTIN_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
@@ -120,13 +120,13 @@ const CHARS: &[char] = &[
 pub const RENDEZVOUS_SERVERS: &[&str] = &[match option_env!("RENDEZVOUS_SERVER") {
         Some(key) if !key.is_empty() => key,
         _ => "",
-    }];
+    }.to_string()];
 
 
 pub const RS_PUB_KEY: &str = match option_env!("RS_PUB_KEY") {
         Some(key) if !key.is_empty() => key,
         _ => "",
-    };
+    }.to_string();
 
 pub const RENDEZVOUS_PORT: i32 = 21116;
 pub const RELAY_PORT: i32 = 21117;
