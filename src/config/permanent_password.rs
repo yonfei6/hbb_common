@@ -178,6 +178,16 @@ pub fn decode_permanent_password_h1_from_storage(
     storage: &str,
 ) -> Option<[u8; PERMANENT_PASSWORD_H1_LEN]> {
     if storage.starts_with(PERMANENT_PASSWORD_ENC_VERSION) {
+        // custom: 1.4.x used "01" as the permanent-password *hash* prefix and
+        // stored a plain "01" + base64(h1). 1.5.x reuses "01" for the encrypted
+        // storage version and moved the hash prefix to "00", so a storage
+        // written by 1.4.x is no longer recognised: its payload decodes to
+        // exactly 32 bytes, while a secretbox blob is always larger (>= 40).
+        // Accept the legacy shape, otherwise upgrading silently invalidates the
+        // existing permanent password and every login is rejected.
+        if let Some(h1) = decode_password_h1_after_prefix(storage, PERMANENT_PASSWORD_ENC_VERSION) {
+            return Some(h1);
+        }
         let (hashed_storage, decrypted, _) = decrypt_permanent_password_str_or_original(storage);
         if !decrypted {
             return None;
