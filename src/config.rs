@@ -1498,14 +1498,6 @@ impl Config {
         // Keep salt stable for user-initiated permanent password updates.
         // Salt should only change when service->user sync updates storage and salt as a pair.
         Self::ensure_permanent_password_salt(config);
-        // custom: hash local passwords with the preset salt so that the preset password
-        // and a user configured password stay valid in the same login challenge.
-        let (preset_storage, preset_salt) = Self::get_preset_password_storage_and_salt();
-        if !preset_salt.is_empty()
-            && preset_permanent_password_storage_is_usable_for_auth(&preset_storage, &preset_salt)
-        {
-            config.salt = preset_salt;
-        }
         let h1 = compute_permanent_password_h1(password, &config.salt);
         encode_permanent_password_encrypted_storage_from_h1(&h1)
     }
@@ -1596,15 +1588,6 @@ impl Config {
     }
 
     pub fn get_effective_permanent_password_salt() -> String {
-        // custom: when a preset password is compiled in, its salt is authoritative.
-        // The login challenge then carries the preset salt, so the preset password can
-        // always be verified even if a local permanent password has been configured.
-        let (preset_storage, preset_salt) = Self::get_preset_password_storage_and_salt();
-        if !preset_salt.is_empty()
-            && preset_permanent_password_storage_is_usable_for_auth(&preset_storage, &preset_salt)
-        {
-            return preset_salt;
-        }
         let (local_storage, local_salt) = Self::get_local_permanent_password_storage_and_salt();
         if !local_storage.is_empty() {
             if local_permanent_password_storage_is_usable_for_auth(&local_storage, &local_salt) {
