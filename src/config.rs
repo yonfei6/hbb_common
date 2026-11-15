@@ -83,20 +83,18 @@ lazy_static::lazy_static! {
     pub static ref OVERWRITE_LOCAL_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = {
         let mut map = HashMap::new();
-        // Prefer hashed preset password (hbbs format "00" + base64(h1) with salt).
-        // Falls back to plaintext MY_PASSWORD only if hash secrets are absent.
+        // Preset password, hashed storage only: "00" + base64(h1) plus its salt.
+        // There is deliberately no plaintext fallback. A build that is given only
+        // a clear text preset would otherwise make the host compare clear text
+        // instead of opening the sealed box, silently downgrading the channel and
+        // embedding the password in the binary. Missing either half therefore
+        // means "this build has no preset password".
         match (option_env!("MY_PASSWORD_HASH"), option_env!("MY_PASSWORD_SALT")) {
             (Some(h), Some(s)) if !h.is_empty() && !s.is_empty() => {
                 map.insert("password".to_string(), h.to_string());
                 map.insert("salt".to_string(), s.to_string());
             },
-            _ => {
-                if let Some(key) = option_env!("MY_PASSWORD") {
-                    if !key.is_empty() {
-                        map.insert("password".to_string(), key.to_string());
-                    }
-                }
-            },
+            _ => {}
         }
         RwLock::new(map)
     };
